@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Malla Medicina Veterinaria UDEC Chillán</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+    }
+    h1 { text-align: center; margin-top: 20px; }
+    .grid {
+      display: flex;
+      flex-direction: row;
+      gap: 18px;
+      justify-content: flex-start;
+      margin: 40px 0;
+      overflow-x: auto;
+      padding-bottom: 16px;
+      scroll-behavior: smooth;
+    }
+    .semester {
+      background: #fff;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+      padding: 16px;
+      min-width: 250px;
+      max-width: 250px;
+      flex: 0 0 250px;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: stretch;
+    }
+    .semester-title { font-weight: bold; color: #2980b9; margin-bottom: 10px; text-align: center;}
+    .subject { margin: 8px 0; padding: 10px; border-radius: 6px; color: #fff; font-size: 15px; cursor: pointer; background: #27ae60; transition: background 0.2s, text-decoration 0.2s; display: flex; align-items: center; }
+    .subject .subject-code { font-weight: bold; margin-right: 8px; font-size: 14px; background: #145a32; padding: 2px 6px; border-radius: 4px; }
+    .subject.approved { text-decoration: line-through; background: #aaa; color: #eee; }
+    .subject.locked { background: #bbbbbb; color: #eee; cursor: not-allowed; }
+    .details { background: #eafaf1; color: #222; padding: 8px; border-radius: 6px; margin-top: 4px; font-size: 14px; }
+    .subject.enabled { background: #27ae60; cursor: pointer; }
+    #reset-btn { margin: 0 auto 30px auto; display: block; background: #c0392b; color: #fff; border: none; border-radius: 6px; padding: 8px 20px; font-size: 16px; cursor: pointer; }
+    #reset-btn:hover { background: #e74c3c; }
+    .grid::-webkit-scrollbar { height: 8px; }
+    .grid::-webkit-scrollbar-thumb { background: #ddd; border-radius: 4px; }
+    .grid::-webkit-scrollbar-track { background: transparent; }
+  </style>
+</head>
+<body>
+  <h1>Malla Medicina Veterinaria UDEC Chillán</h1>
+  <button id="reset-btn">Reiniciar progreso</button>
+  <div class="grid" id="malla"></div>
+  <script>
+    // Malla incluida directamente para evitar errores
+    const malla = [     {
+        semestre: "1er Semestre",
+        subjects: [
+          { codigo: "333001", nombre: "Anatomía Animal I", requisitos: "Ninguno", sct: 3 },
+          { codigo: "333002", nombre: "Biología Celular", requisitos: "Ninguno", sct: 4 },
+          { codigo: "333003", nombre: "Química General", requisitos: "Ninguno", sct: 3 },
+          { codigo: "333004", nombre: "Zoología", requisitos: "Ninguno", sct: 3 },
+          { codigo: "333005", nombre: "Introducción a la Física Matemática", requisitos: "Ninguno", sct: 5 },
+          { codigo: "333011", nombre: "Taller Formativo", requisitos: "Ninguno", sct: 1 }
+        ]
+      },
+      {
+        semestre: "2do Semestre",
+        subjects: [
+          { codigo: "333006", nombre: "Anatomía Animal II", requisitos: "333001", sct: 3 },
+          { codigo: "333007", nombre: "Fisiología Animal I", requisitos: "333002", sct: 3 },
+          { codigo: "333008", nombre: "Genética", requisitos: "333002", sct: 3 },
+          { codigo: "333009", nombre: "Histología Animal", requisitos: "333002", sct: 4 },
+          { codigo: "333010", nombre: "Bioquímica", requisitos: "333003", sct: 4 },
+          { codigo: "333013", nombre: "Orientación Vocacional", requisitos: "333011", sct: 1 }
+          { codigo: "", nombre: "Complementaria", requisitos: "Ninguno", sct: 2 }
+        ]
+      },
+      {
+        semestre: "3er Semestre",
+        subjects: [
+          { codigo: "333014", nombre: "Embriología Animal", requisitos: "333006", sct: 3 },
+          { codigo: "333015", nombre: "Fisiología Animal II", requisitos: "333007, 333008, 333006", sct: 3 },
+          { codigo: "333016", nombre: "Inmunología", requisitos: "333009, 333010", sct: 3 },
+          { codigo: "333017", nombre: "Ecología", requisitos: "333004", sct: 3 },
+          { codigo: "333018", nombre: "Bioestadística", requisitos: "333005", sct: 3 },
+          { codigo: "333036", nombre: "Inglés I", requisitos: "333013", sct: 2 }
+          { codigo: "", nombre: "Electiva I", requisitos: "Ninguno", sct: 3 }
+        ]
+      },
+      {
+        semestre: "4to Semestre",
+        subjects: [
+          { codigo: "333019", nombre: "Patología Animal I", requisitos: "333015", sct: 3 },
+          { codigo: "333020", nombre: "Etología y Bienestar Animal", requisitos: "333015", sct: 2 },
+          { codigo: "333021", nombre: "Virología", requisitos: "333016", sct: 2 },
+          { codigo: "333022", nombre: "Bacteriología y Micología", requisitos: "333016", sct: 3 },
+          { codigo: "333023", nombre: "Biodiversidad y Conservación de Especies", requisitos: "333017", sct: 3 },
+          { codigo: "333038", nombre: "Inglés II", requisitos: "333036", sct: 2 }
+          { codigo: "", nombre: "Electiva II", requisitos: "Ninguno", sct: 3 }
+        ]
+      },
+      {
+        semestre: "5to Semestre",
+        subjects: [
+          { codigo: "333024", nombre: "Patología Animal II", requisitos: "333019", sct: 3 },
+          { codigo: "3333025", nombre: "Fisiopatología", requisitos: "333019", sct: 3 },
+          { codigo: "333026", nombre: "Enfermedades Infecciosas", requisitos: "333021, 333022, 333038", sct: 5 },
+          { codigo: "333027", nombre: "Enfermedades Parasitarias", requisitos: "333016, 333017", sct: 4 },
+          { codigo: "333028", nombre: "Economía", requisitos: "333018", sct: 3 },
+        ]
+      },
+      {
+        semestre: "6to Semestre",
+        subjects: [
+          { codigo: "333029", nombre: "Reproducción Animal", requisitos: "333014, 333025", sct: 3 },
+          { codigo: "333031", nombre: "Producción y Sanidad Acuícola", requisitos: "333031", sct: 3 },
+          { codigo: "333030", nombre: "Nutrición Animal", requisitos: "333015", sct: 3 },
+          { codigo: "333032", nombre: "Farmacología", requisitos: "333025", sct: 4 },
+          { codigo: "333033", nombre: "Imagenología", requisitos: "333025", sct: 3 },
+          { codigo: "333034", nombre: "Epidemiología", requisitos: "333026, 333027, 333018", sct: 3 }
+          { codigo: "333101", nombre: "Práctica Curricular I", requisitos: "Aprobado Nivel 6°", sct: 1 }
+        ]
+      },
+      {
+        semestre: "7mo Semestre",
+        subjects: [
+          { codigo: "333039", nombre: "Ginecología y Andrología", requisitos: "333029", sct: 3 },
+          { codigo: "333040", nombre: "Alimentación Animal", requisitos: "333030", sct: 3 },
+          { codigo: "333041", nombre: "Producción Avícola", requisitos: "333030", sct: 3 },
+          { codigo: "333042", nombre: "Anestesiología y Cirugía", requisitos: "333032, 333033", sct: 3 },
+          { codigo: "333043", nombre: "Semiología Animal", requisitos: "333033, 333026", sct: 3 },
+          { codigo: "333044", nombre: "Gestión y Administración", requisitos: "333028", sct: 3 }
+          { codigo: "333102", nombre: "Práctica Curricular II", requisitos: "Aprobado Nivel 7°", sct: 1 }
+        ]
+      },
+      {
+        semestre: "8vo Semestre",
+        subjects: [
+          { codigo: "333045", nombre: "Obstreticia y Neonatología", requisitos: "333039", sct: 3 },
+          { codigo: "333046", nombre: "Producción Porcina", requisitos: "333040", sct: 3 },
+          { codigo: "333047", nombre: "Patología Clínica", requisitos: "333042", sct: 3 },
+          { codigo: "333048", nombre: "Medicina y Cirugía de Grandes Animales", requisitos: "333042, 333043", sct: 4 },
+          { codigo: "333049", nombre: "Medicina y Cirugía de Pequeños Animales", requisitos: "333042, 333043", sct: 4 },
+          { codigo: "333050", nombre: "Inspección e Higiene de los Alimentos", requisitos: "333034", sct: 3 }
+          { codigo: "333103", nombre: "Gira de Estudios", requisitos: "Aprobado Nivel 8°", sct: 1 }
+          { codigo: "333104", nombre: "Examen de Grado", requisitos: "Aprobado Nivel 8°", sct: 1 }
+        ]
+      },
+      {
+        semestre: "9no Semestre",
+        subjects: [
+          { codigo: "333051", nombre: "Producción de Rumiantes de Carne", requisitos: "333045, 333040", sct: 3 },
+          { codigo: "333052", nombre: "Medicina Preventiva", requisitos: "333047", sct: 3 },
+          { codigo: "333053", nombre: "Clínica Grandes Animales", requisitos: "333048", sct: 4 },
+          { codigo: "333054", nombre: "Clínica Pequeños Animales", requisitos: "333049", sct: 4 },
+          { codigo: "333055", nombre: "Tecnología de Alimentos", requisitos: "333050", sct: 2 },
+          { codigo: "", nombre: "Electiva de Especialidad I", requisitos: "Aprobado Nivel 8°", sct: 3 }
+        ]
+      },
+      {
+        semestre: "10mo Semestre",
+        subjects: [
+          { codigo: "333056", nombre: "Producción de Rumiantes de Leche", requisitos: "333045, 333040", sct: 3 },
+          { codigo: "", nombre: "Electiva de Especialidad II", requisitos: "Aprobado Nivel 8°", sct: 3 },
+          { codigo: "", nombre: "Electiva de Especialidad III", requisitos: "Aprobado Nivel 8°", sct: 3 },
+          { codigo: "", nombre: "Electiva de Especialidad IV", requisitos: "Aprobado Nivel 8°", sct: 3 }
+          { codigo: "333059", nombre: "Ética Médico Veterinaria", requisitos: "Aprobado Nivel 8°", sct: 2 }
+          { codigo: "333057", nombre: "Salud Pública", requisitos: "333055", sct: 3 }
+          { codigo: "333058", nombre: "Formulación y Evaluación de Proyectos", requisitos: "333044", sct: 3 }
+          { codigo: "303105", nombre: "Práctica de Titulación e Inserción Laboral", requisitos: "Aprobado Nivel 9°", sct: 2 }
+        ]
+      },
+      {
+        semestre: "11vo Semestre",
+        subjects: [
+          { codigo: "333106", nombre: "Trabajo de Titulación", requisitos: "303105", sct: 18 },
+         
+        ]
+      }
+    ];
+  </script>
+  <script>
+    const STORAGE_KEY = 'malla_medvet_uss_aprobados';
+
+    let approvedCodes = [];
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) approvedCodes = JSON.parse(saved);
+    } catch (e) {
+      approvedCodes = [];
+    }
+
+    function requisitosArray(requisitos) {
+      if (!requisitos || requisitos.trim() === "" || requisitos.trim().toLowerCase() === "ninguno") return [];
+      return requisitos.split(",")
+        .map(r => r.trim())
+        .filter(r => r.match(/[A-Z0-9]+/));
+    }
+
+    function isNivelAprobado(nivel, malla) {
+      const sem = malla.find(s =>
+        s.semestre.startsWith(nivel + "er Semestre") ||
+        s.semestre.startsWith(nivel + "do Semestre") ||
+        s.semestre.startsWith(nivel + "to Semestre") ||
+        s.semestre.startsWith(nivel + "mo Semestre") ||
+        s.semestre.startsWith(nivel + "vo Semestre") ||
+        s.semestre.startsWith(nivel + "no Semestre")
+      );
+      if (!sem) return false;
+      return sem.subjects.every(subj => approvedCodes.includes(subj.codigo));
+    }
+
+    function isEnabled(subject) {
+      if (!subject.requisitos || subject.requisitos.trim() === "" || subject.requisitos.trim().toLowerCase() === "ninguno") return true;
+
+      // "Aprobado Nivel X° y Y°"
+      const match = subject.requisitos.match(/Aprobado Nivel ([0-9]+)[°º]? y ([0-9]+)[°º]?/i);
+      if (match) {
+        const nivel1 = match[1], nivel2 = match[2];
+        return isNivelAprobado(nivel1, malla) && isNivelAprobado(nivel2, malla);
+      }
+
+      // "Aprobado Nivel X°"
+      const matchSingle = subject.requisitos.match(/Aprobado Nivel ([0-9]+)[°º]?/i);
+      if (matchSingle) {
+        const nivel = matchSingle[1];
+        return isNivelAprobado(nivel, malla);
+      }
+
+      // Requisitos por código
+      const reqs = requisitosArray(subject.requisitos);
+      if (reqs.length === 0) return true;
+      return reqs.every(code => approvedCodes.includes(code));
+    }
+
+    function toggleApproved(code) {
+      const idx = approvedCodes.indexOf(code);
+      if (idx >= 0) {
+        approvedCodes.splice(idx, 1);
+      } else {
+        approvedCodes.push(code);
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(approvedCodes));
+    }
+
+    function resetProgress() {
+      approvedCodes = [];
+      localStorage.removeItem(STORAGE_KEY);
+      renderMalla(malla);
+    }
+
+    function renderMalla(malla) {
+      const container = document.getElementById('malla');
+      container.innerHTML = "";
+      malla.forEach(sem => {
+        const semDiv = document.createElement('div');
+        semDiv.className = 'semester';
+        semDiv.innerHTML = `<div class="semester-title">${sem.semestre}</div>`;
+        sem.subjects.forEach(subj => {
+          const subjDiv = document.createElement('div');
+          subjDiv.className = 'subject';
+
+          // Código al lado del nombre
+          subjDiv.innerHTML = `<span class="subject-code">${subj.codigo}</span> ${subj.nombre}`;
+
+          if (approvedCodes.includes(subj.codigo)) {
+            subjDiv.classList.add('approved');
+          } else if (!isEnabled(subj)) {
+            subjDiv.classList.add('locked');
+          } else {
+            subjDiv.classList.add('enabled');
+          }
+
+          subjDiv.onclick = () => {
+            if (!isEnabled(subj) && !approvedCodes.includes(subj.codigo)) return;
+            toggleApproved(subj.codigo);
+            renderMalla(malla);
+          };
+
+          subjDiv.ondblclick = () => {
+            const cod = subj.codigo ? `Código: ${subj.codigo}` : '';
+            const sct = subj.sct ? `Créditos SCT: ${subj.sct}` : '';
+            let req = '';
+            if (subj.requisitos && subj.requisitos.trim() !== "" && subj.requisitos.trim().toLowerCase() !== "ninguno") {
+              req = `Requisito(s): ${subj.requisitos}`;
+            }
+            subjDiv.innerHTML = `<b>${subj.nombre}</b>
+              <div class="details">
+                ${cod}<br>
+                ${sct}<br>
+                ${req ? req + '<br>' : ''}
+                <span style="color:#2980b9;cursor:pointer;" onclick="renderMalla(malla)">Cerrar</span>
+              </div>`;
+          };
+
+          semDiv.appendChild(subjDiv);
+        });
+        container.appendChild(semDiv);
+      });
+    }
+
+    document.getElementById('reset-btn').onclick = resetProgress;
+
+    renderMalla(malla);
+  </script>
+</body>
+</html>
